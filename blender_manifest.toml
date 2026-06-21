@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+schema_version = '1.0.0'
+
+id = 'blender-discordrp'
+version = '0.0.0'
+type = 'add-on'
+
+name = 'Discord Rich Presence'
+tagline = 'Share Blender activity on Discord'
+maintainer = 'Jiamu Sun <39@barroit.sh>'
+
+website = 'https://github.com/barroit/blender-discordrp'
+
+tags = [ 'User Interface' ]
+
+license = [ 'SPDX:GPL-3.0-or-later' ]
+copyright = [
+	'2026 Jiamu Sun <39@barroit.sh>',
+]
+
+[permissions]
+files = 'Connect to Discord IPC socket'
+
+[build]
+paths_exclude_pattern = [
+	'/__pycache__',
+	'/.git/',
+	'/*.zip',
+	'/scripts',
+]
