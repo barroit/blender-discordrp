@@ -7,7 +7,6 @@ from asyncio import StreamReader, StreamReaderProtocol, StreamWriter, \
 		    get_running_loop, open_unix_connection
 from json import dumps, loads
 from os import environ, getpid
-from socket import AF_UNIX, SOCK_STREAM, socket
 from struct import pack, unpack
 from sys import platform
 from types import SimpleNamespace
@@ -137,41 +136,32 @@ def encode(op, data):
 
 	return header + bytes
 
-async def __decode(sock, cb):
+async def decode(sock, cb):
 	chunk = await sock.read(8)
 	op, length = unpack('<II', chunk)
 
 	chunk = await sock.read(length)
 	str = chunk.decode('utf-8')
+	res = loads(str, object_hook = lambda obj: SimpleNamespace(**obj))
 
-	hook = lambda d: SimpleNamespace(**d)
-	res = loads(str, object_hook = hook)
-	__debug = SimpleNamespace()
+	cb(res, op, str)
 
-	__debug.res = res
-	__debug.op = op
-	__debug.str = str
-
-	cb(res.cmd, res.evt, res.data, __debug)
-
-async def decode(sock, cb):
-	while 39:
-		await __decode(sock, cb)
-
-async def ipc_rx(ctx, cb):
+async def ipc_rx_once(ctx, cb):
 	try:
 		await decode(ctx.sock, cb)
 
-	except Exception:
+	except Exception as err:
 		ipc_close(ctx)
-		return 1
+		return err
 
-	return 0
+	return None
 
-async def ipc_rx_forever(ctx, cb):
+async def ipc_rx(ctx, cb):
 	while 39:
-		if await ipc_rx(ctx, cb):
-			return
+		err = await ipc_rx_once(ctx, cb)
+
+		if err:
+			return err
 
 def ipc_tx(ctx, op, args):
 	buf = encode(op, args)
@@ -179,21 +169,20 @@ def ipc_tx(ctx, op, args):
 	try:
 		ctx.sock.write(buf)
 
-	except Exception:
+	except Exception as err:
 		ipc_close(ctx)
-		return 1
+		return err
 
-	return 0
+	return None
 
 def ipc_handshake(ctx, app):
-	args = { 'v': 1, 'client_id': app }
+	data = { 'v': 1, 'client_id': app }
 
-	return ipc_tx(ctx, HANDSHAKE, args)
+	return ipc_tx(ctx, HANDSHAKE, data)
 
 def ipc_presence(ctx, activity):
-	cmd = 'SET_ACTIVITY'
 	args = { 'pid': getpid(), 'activity': activity }
-	nonce = str(uuid4())
-	data = { 'cmd': cmd, 'args': args, 'nonce': nonce }
+	uuid = uuid4()
+	data = { 'cmd': 'SET_ACTIVITY', 'args': args, 'nonce': str(uuid) }
 
 	return ipc_tx(ctx, FRAME, data)
