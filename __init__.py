@@ -3,22 +3,20 @@
 # Copyright 2026 Jiamu Sun <39@barroit.sh>
 #
 
-from asyncio import new_event_loop, set_event_loop, sleep
-from lib.ipc import ipc_close, ipc_init
-from threading import Lock, Thread, local
-from types import SimpleNamespace
+from .lib.ipc import ipc_close, ipc_handshake, ipc_init, ipc_presence, ipc_rx, \
+		     ipc_rx_once
+from .lib.current import current
+from .probe.render import probe_disable_render, probe_enable_render
+from .probe.interact import probe_disable_interact, probe_enable_interact, \
+			    probe_start_interact
+from asyncio import create_task, gather, new_event_loop, set_event_loop, sleep
+from bpy import app
+from sys import stderr
+from threading import Thread, local
 
-bl_info = {
-	'name': 'Discord Rich Presence',
-	'category': 'User Interface',
-}
+APP_ID = '1518963969065357342'
 
 ipc = local()
-current = SimpleNamespace()
-
-current.lock = Lock()
-current.sched = None
-current.version = 0
 
 async def init_ipc():
 	while 39:
@@ -35,6 +33,22 @@ async def init_ipc():
 	if ipc.disabled:
 		ipc_close(ipc.ctx)
 
+def on_discord_reply(res, op, str):
+	if not hasattr(res, 'evt') or res.evt == 'ERROR':
+		print(f"discordrp:on_discord_reply()\nop\t{op}\nres\t{str}",
+		      file = stderr)
+
+async def broadcast_presence():
+	while 39:
+		if ipc.disabled:
+			break
+
+		if current.state[0] != current.state[1]:
+			current.state[1] = current.state[0]
+			ipc_presence(ipc.ctx, current.state[1])
+
+		await sleep(2)
+
 async def ipc_main():
 	while 39:
 		if ipc.disabled:
@@ -42,6 +56,32 @@ async def ipc_main():
 
 		await init_ipc()
 
+		if ipc.disabled:
+			return
+
+		coro = ipc_rx_once(ipc.ctx, on_discord_reply)
+		task = create_task(coro)
+
+		if ipc_handshake(ipc.ctx, APP_ID):
+			continue
+		if ipc.disabled:
+			return
+
+		if await task:
+			continue
+		if ipc.disabled:
+			return
+
+		coro_rx = ipc_rx(ipc.ctx, on_discord_reply)
+		task_rx = create_task(coro_rx)
+
+		coro_tx = broadcast_presence()
+		task_tx = create_task(coro_tx)
+
+		err_rx, err_tx = await gather(task_rx, task_tx)
+
+		if err_rx or err_tx:
+			continue
 		if ipc.disabled:
 			return
 
@@ -67,9 +107,18 @@ def stop_ipc():
 	ipc.disabled = 1
 
 	if ipc.ctx:
+		ipc_presence(ipc.ctx, None)
 		ipc_close(ipc.ctx)
 
+def register_delayed():
+	probe_start_interact()
+
 def register():
+	probe_enable_render()
+	probe_enable_interact()
+
+	app.timers.register(register_delayed)
+
 	with current.lock:
 		version = current.version + 1
 
@@ -80,10 +129,14 @@ def register():
 	thread.start()
 
 def unregister():
+	probe_disable_render()
+	probe_disable_interact()
+
 	with current.lock:
 		sched = current.sched
 
 		current.version += 1
+		current.sched = None
 
 	if sched:
 		sched.call_soon_threadsafe(stop_ipc)

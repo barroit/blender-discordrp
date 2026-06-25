@@ -5,6 +5,7 @@
 
 from asyncio import StreamReader, StreamReaderProtocol, StreamWriter, \
 		    get_running_loop, open_unix_connection
+from copy import deepcopy
 from json import dumps, loads
 from os import environ, getpid
 from struct import pack, unpack
@@ -130,7 +131,7 @@ def ipc_close(ctx):
 	ctx.sock.close()
 
 def encode(op, data):
-	str = dumps(data, ensure_ascii = False)
+	str = dumps(data, ensure_ascii = False, default = vars)
 	bytes = str.encode('utf-8')
 	header = pack('<ii', op, len(bytes))
 
@@ -181,8 +182,18 @@ def ipc_handshake(ctx, app):
 	return ipc_tx(ctx, HANDSHAKE, data)
 
 def ipc_presence(ctx, activity):
-	args = { 'pid': getpid(), 'activity': activity }
+	args = SimpleNamespace()
+	data = SimpleNamespace()
 	uuid = uuid4()
-	data = { 'cmd': 'SET_ACTIVITY', 'args': args, 'nonce': str(uuid) }
+
+	if activity:
+		args.activity = deepcopy(activity)
+		args.activity.name = 'Blender'
+
+	args.pid = getpid()
+
+	data.cmd = 'SET_ACTIVITY'
+	data.args = args
+	data.nonce = str(uuid)
 
 	return ipc_tx(ctx, FRAME, data)
