@@ -10,6 +10,7 @@ from .probe.render import probe_disable_render, probe_enable_render
 from .probe.interact import probe_disable_interact, probe_enable_interact, \
 			    probe_start_interact
 from asyncio import create_task, gather, new_event_loop, set_event_loop, sleep
+from atexit import register as atexit_register
 from bpy import app
 from sys import stderr
 from threading import Thread, local
@@ -113,11 +114,16 @@ def stop_ipc():
 def register_delayed():
 	probe_start_interact()
 
+def on_exit():
+	if current.sched:
+		current.sched.call_soon_threadsafe(stop_ipc)
+
 def register():
 	probe_enable_render()
 	probe_enable_interact()
 
 	app.timers.register(register_delayed)
+	atexit_register(on_exit)
 
 	with current.lock:
 		version = current.version + 1
