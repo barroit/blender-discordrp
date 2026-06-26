@@ -181,14 +181,17 @@ def ipc_handshake(ctx, app):
 
 	return ipc_tx(ctx, HANDSHAKE, data)
 
-def ipc_presence(ctx, activity):
+def ipc_presence(ctx, activity_in, meta_in):
 	args = SimpleNamespace()
 	data = SimpleNamespace()
 	uuid = uuid4()
 
-	if activity:
-		args.activity = deepcopy(activity)
-		args.activity.name = 'Blender'
+	if activity_in:
+		meta = vars(meta_in)
+		activity = deepcopy(activity_in)
+
+		vars(activity).update(meta)
+		args.activity = activity
 
 	args.pid = getpid()
 

@@ -7,6 +7,7 @@ from .lib.ipc import ipc_close, ipc_handshake, ipc_init, ipc_presence, ipc_rx, \
 		     ipc_rx_once
 from .lib.current import current
 from .probe.render import probe_disable_render, probe_enable_render
+from .probe.meta import probe_disable_meta, probe_enable_meta
 from .probe.interact import probe_disable_interact, probe_enable_interact, \
 			    probe_start_interact
 from asyncio import create_task, gather, new_event_loop, set_event_loop, sleep
@@ -43,7 +44,8 @@ async def broadcast_presence():
 
 		if current.state[0] != current.state[1]:
 			current.state[1] = current.state[0]
-			ipc_presence(ipc.ctx, current.state[1])
+			ipc_presence(ipc.ctx, current.state[1],
+				     current.state[2])
 
 		await sleep(1)
 
@@ -82,6 +84,7 @@ async def ipc_main():
 def start_ipc(version):
 	coro = ipc_main()
 	sched = new_event_loop()
+
 	state_0 = SimpleNamespace()
 	state_1 = SimpleNamespace()
 
@@ -107,7 +110,7 @@ def stop_ipc():
 	ipc.disabled = 1
 
 	if ipc.ctx:
-		ipc_presence(ipc.ctx, None)
+		ipc_presence(ipc.ctx, None, None)
 		ipc_close(ipc.ctx)
 
 def register_delayed():
@@ -119,6 +122,7 @@ def on_exit():
 
 def register():
 	probe_enable_render()
+	probe_enable_meta()
 	probe_enable_interact()
 
 	app.timers.register(register_delayed)
@@ -135,6 +139,7 @@ def register():
 
 def unregister():
 	probe_disable_render()
+	probe_disable_meta()
 	probe_disable_interact()
 
 	with current.lock:

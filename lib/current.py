@@ -11,4 +11,4 @@ current = SimpleNamespace()
 current.lock = Lock()
 current.sched = None
 current.version = 0
-current.state = [ None, None ]
+current.state = [ None, None, None ]
