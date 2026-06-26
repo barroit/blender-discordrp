@@ -14,6 +14,7 @@ from atexit import register as atexit_register
 from bpy import app
 from sys import stderr
 from threading import Thread, local
+from types import SimpleNamespace
 
 ipc = local()
 
@@ -81,6 +82,10 @@ async def ipc_main():
 def start_ipc(version):
 	coro = ipc_main()
 	sched = new_event_loop()
+	state_0 = SimpleNamespace()
+	state_1 = SimpleNamespace()
+
+	state_0.details = 'Just started'
 
 	with current.lock:
 		if current.version != version:
@@ -90,6 +95,8 @@ def start_ipc(version):
 		ipc.disabled = 0
 
 		current.sched = sched
+		current.state[0] = state_0
+		current.state[1] = state_1
 
 	set_event_loop(sched)
 	sched.run_until_complete(coro)
