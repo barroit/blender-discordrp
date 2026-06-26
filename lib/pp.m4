@@ -10,4 +10,7 @@ m4_define(APP_ID, '1518963969065357342')
 m4_define(IPC_MAYBE_STOP, if ipc.disabled: return)
 m4_define(IPC_ASSERT_PASS, if $@: continue)
 
+m4_syscmd(env | grep -q ^NDEBUG=)
+m4_define(DPRINT, m4_ifelse(m4_sysval, 0, , print($@)))
+
 m4_divert(0)m4_dnl

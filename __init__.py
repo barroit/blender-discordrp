@@ -51,6 +51,7 @@ async def ipc_main():
 		IPC_MAYBE_STOP
 
 		await init_ipc()
+		DPRINT('DONE - init_ipc()')
 
 		IPC_MAYBE_STOP
 
@@ -59,9 +60,11 @@ async def ipc_main():
 
 		IPC_ASSERT_PASS(ipc_handshake(ipc.ctx, APP_ID))
 		IPC_MAYBE_STOP
+		DPRINT('DONE - ipc_handshake()')
 
 		IPC_ASSERT_PASS(await task)
 		IPC_MAYBE_STOP
+		DPRINT('DONE - ipc_rx_once()')
 
 		coro_rx = ipc_rx(ipc.ctx, on_discord_reply)
 		task_rx = create_task(coro_rx)
@@ -70,6 +73,7 @@ async def ipc_main():
 		task_tx = create_task(coro_tx)
 
 		err_rx, err_tx = await gather(task_rx, task_tx)
+		DPRINT('DONE - ipc_rx() or broadcast_presence()')
 
 		IPC_ASSERT_PASS(err_rx or err_tx)
 		IPC_MAYBE_STOP

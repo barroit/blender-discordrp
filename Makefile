@@ -3,12 +3,18 @@
 m4 ?= m4
 m4 := $(m4) -P
 
-src := __init__.py $(wildcard lib/*.py probe/*.py) \
-       blender_manifest.toml LICENSES/GPL-3.0-or-later
+onchange ?= onchange
 
-obj-y := $(addprefix build/,$(src))
+src-glob := __init__.py lib/*.py probe/*.py blender_manifest.toml LICENSES/*
+obj-y := $(addprefix build/,$(wildcard $(src-glob)))
 
-.PHONY: preprocess
+.PHONY: preprocess hot-preprocess
+
+preprocess:
+
+hot-preprocess: preprocess
+	$(onchange) $(patsubst %,'%',$(src-glob)) -- make -j preprocess
+
 preprocess: $(obj-y)
 
 build/%.py: lib/pp.m4 %.py
@@ -18,3 +24,6 @@ build/%.py: lib/pp.m4 %.py
 build/%: %
 	@mkdir -p $(@D)
 	cp $< $@
+
+clean:
+	rm -rf build
