@@ -1,5 +1,3 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-/__pycache__
-/lib/__pycache__
-/probe/__pycache__
+/build

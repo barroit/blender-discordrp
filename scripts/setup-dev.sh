@@ -14,7 +14,7 @@ for blender in "$dst"/*; do
 	prefix="$blender"/extensions/user_default
 
 	mkdir -p "$prefix"
-	ln -snf $(realpath .) "$prefix"/discordrp
+	ln -snf $(realpath .)/build "$prefix"/discordrp
 
 	printf -- ' -> %s\n' "$prefix"/discordrp
 done

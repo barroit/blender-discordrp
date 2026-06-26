@@ -15,8 +15,6 @@ from bpy import app
 from sys import stderr
 from threading import Thread, local
 
-APP_ID = '1518963969065357342'
-
 ipc = local()
 
 async def init_ipc():
@@ -28,8 +26,7 @@ async def init_ipc():
 
 		await sleep(2)
 
-		if ipc.disabled:
-			return
+		IPC_MAYBE_STOP
 
 	if ipc.disabled:
 		ipc_close(ipc.ctx)
@@ -41,8 +38,7 @@ def on_discord_reply(res, op, str):
 
 async def broadcast_presence():
 	while 39:
-		if ipc.disabled:
-			break
+		IPC_MAYBE_STOP
 
 		if current.state[0] != current.state[1]:
 			current.state[1] = current.state[0]
@@ -52,26 +48,20 @@ async def broadcast_presence():
 
 async def ipc_main():
 	while 39:
-		if ipc.disabled:
-			return
+		IPC_MAYBE_STOP
 
 		await init_ipc()
 
-		if ipc.disabled:
-			return
+		IPC_MAYBE_STOP
 
 		coro = ipc_rx_once(ipc.ctx, on_discord_reply)
 		task = create_task(coro)
 
-		if ipc_handshake(ipc.ctx, APP_ID):
-			continue
-		if ipc.disabled:
-			return
+		IPC_ASSERT_PASS(ipc_handshake(ipc.ctx, APP_ID))
+		IPC_MAYBE_STOP
 
-		if await task:
-			continue
-		if ipc.disabled:
-			return
+		IPC_ASSERT_PASS(await task)
+		IPC_MAYBE_STOP
 
 		coro_rx = ipc_rx(ipc.ctx, on_discord_reply)
 		task_rx = create_task(coro_rx)
@@ -81,10 +71,8 @@ async def ipc_main():
 
 		err_rx, err_tx = await gather(task_rx, task_tx)
 
-		if err_rx or err_tx:
-			continue
-		if ipc.disabled:
-			return
+		IPC_ASSERT_PASS(err_rx or err_tx)
+		IPC_MAYBE_STOP
 
 def start_ipc(version):
 	coro = ipc_main()

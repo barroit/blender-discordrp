@@ -26,7 +26,6 @@ files = 'Connect to Discord IPC socket'
 [build]
 paths_exclude_pattern = [
 	'/__pycache__',
-	'/.git/',
-	'/*.zip',
-	'/scripts',
+	'/lib/__pycache__',
+	'/probe/__pycache__',
 ]
