@@ -7,10 +7,9 @@
 
 from ..lib.current import current
 from bpy import app, context as __context, ops, types, utils
+from bpy.app.handlers import persistent
 from collections import deque
 from types import SimpleNamespace
-
-timer = None
 
 def find_area(window, axis):
 	for area in window.screen.areas:
@@ -74,9 +73,16 @@ class probe_interaction(types.Operator):
 def probe_start_interact():
 	ops.wm.probe_interaction('INVOKE_DEFAULT')
 
+@persistent
+def on_load_post(filepath):
+	probe_start_interact()
+
 def probe_enable_interact():
 	utils.register_class(probe_interaction)
+	app.timers.register(probe_start_interact)
+	app.handlers.load_post.append(on_load_post)
 
 def probe_disable_interact():
 	__context.window_manager.event_timer_remove(probe_interaction.timer)
 	utils.unregister_class(probe_interaction)
+	app.handlers.load_post.remove(on_load_post)

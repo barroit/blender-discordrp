@@ -55,7 +55,7 @@ def probe_meta():
 
 def probe_enable_meta():
 	probe_meta()
-	app.timers.register(probe_meta)
+	app.timers.register(probe_meta, persistent = True)
 
 def probe_disable_meta():
 	app.timers.unregister(probe_meta)

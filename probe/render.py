@@ -5,6 +5,7 @@
 
 from ..lib.current import current
 from bpy import app
+from bpy.app.handlers import persistent
 from types import SimpleNamespace
 
 ctx = SimpleNamespace()
@@ -12,6 +13,7 @@ ctx = SimpleNamespace()
 def count_frame(render):
 	return (render.end - render.start) // render.step + 1
 
+@persistent
 def on_render_init(scene):
 	ctx.restore = current.state[0]
 
@@ -21,6 +23,7 @@ def on_render_init(scene):
 	ctx.index = 0
 	ctx.frames = count_frame(ctx)
 
+@persistent
 def on_render_pre(scene):
 	res = SimpleNamespace()
 
@@ -37,6 +40,7 @@ def on_render_pre(scene):
 
 	current.state[0] = res
 
+@persistent
 def render_complete(scene, depsgraph):
 	current.state[0] = ctx.restore
 

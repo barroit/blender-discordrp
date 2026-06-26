@@ -8,11 +8,9 @@ from .lib.ipc import ipc_close, ipc_handshake, ipc_init, ipc_presence, ipc_rx, \
 from .lib.current import current
 from .probe.render import probe_disable_render, probe_enable_render
 from .probe.meta import probe_disable_meta, probe_enable_meta
-from .probe.interact import probe_disable_interact, probe_enable_interact, \
-			    probe_start_interact
+from .probe.interact import probe_disable_interact, probe_enable_interact
 from asyncio import create_task, gather, new_event_loop, set_event_loop, sleep
-from atexit import register as atexit_register
-from bpy import app
+from atexit import register as atexit_register, unregister as atexit_unregister
 from sys import stderr
 from threading import Thread, local
 from types import SimpleNamespace
@@ -113,9 +111,6 @@ def stop_ipc():
 		ipc_presence(ipc.ctx, None, None)
 		ipc_close(ipc.ctx)
 
-def register_delayed():
-	probe_start_interact()
-
 def on_exit():
 	if current.sched:
 		current.sched.call_soon_threadsafe(stop_ipc)
@@ -125,7 +120,6 @@ def register():
 	probe_enable_meta()
 	probe_enable_interact()
 
-	app.timers.register(register_delayed)
 	atexit_register(on_exit)
 
 	with current.lock:
@@ -141,6 +135,8 @@ def unregister():
 	probe_disable_render()
 	probe_disable_meta()
 	probe_disable_interact()
+
+	atexit_unregister(on_exit)
 
 	with current.lock:
 		sched = current.sched
