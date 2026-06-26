@@ -7,22 +7,23 @@
 
 from ..lib.current import current
 from bpy import app, context as __context, ops, types, utils
+from collections import deque
 from types import SimpleNamespace
 
 timer = None
 
-def find_area(window, event):
+def find_area(window, axis):
 	for area in window.screen.areas:
-		if area.x <= event.mouse_x <= area.x + area.width and \
-		   area.y <= event.mouse_y <= area.y + area.height:
+		if area.x <= axis[0] <= area.x + area.width and \
+		   area.y <= axis[1] <= area.y + area.height:
 			return area.type
 
 	return None
 
-def do_probe(context, event):
+def format_message(context, axis):
 	res = SimpleNamespace()
 
-	area = find_area(context.window, event)
+	area = find_area(context.window, axis)
 	workspace = context.window.workspace.name
 
 	res.details = f"In {workspace}"
@@ -49,23 +50,24 @@ class probe_interaction(types.Operator):
 		modal_handler_add = context.window_manager.modal_handler_add
 		timer = event_timer_add(1, window = context.window)
 
-		self.click = 0
+		self.clicks = deque()
 		probe_interaction.timer = timer
 
 		modal_handler_add(self)
 		return { 'RUNNING_MODAL' }
 
 	def modal(self, context, event):
-		if event.type == 'TIMER' and self.click:
-			self.click -= 1
-			current.state[0] = do_probe(context, event)
+		if event.type == 'TIMER' and len(self.clicks):
+			axis = self.clicks.popleft()
+
+			current.state[0] = format_message(context, axis)
 			return { 'RUNNING_MODAL' }
 
 		elif event.type in ( 'LEFTMOUSE', 'RIGHTMOUSE' ) and \
 		   event.value == 'RELEASE' and \
 		   not app.is_job_running('RENDER') and \
 		   not app.is_job_running('OBJECT_BAKE'):
-			self.click += 1
+			self.clicks.append(( event.mouse_x, event.mouse_y ))
 
 		return { 'PASS_THROUGH' }
 
