@@ -45,7 +45,7 @@ async def broadcast_presence():
 			current.state[1] = current.state[0]
 			ipc_presence(ipc.ctx, current.state[1])
 
-		await sleep(2)
+		await sleep(1)
 
 async def ipc_main():
 	while 39:

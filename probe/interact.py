@@ -6,9 +6,10 @@
 # https://docs.blender.org/api/current/bpy.types.EnumProperty.html#bpy.types.EnumProperty.enum_items
 
 from ..lib.current import current
-from bpy import app, ops, types, utils
-from time import monotonic as time_monotonic
+from bpy import app, context as __context, ops, types, utils
 from types import SimpleNamespace
+
+timer = None
 
 def find_area(window, event):
 	for area in window.screen.areas:
@@ -44,22 +45,27 @@ class probe_interaction(types.Operator):
 	bl_label = 'Probe Interaction'
 
 	def invoke(self, context, event):
-		self.prev = 0.390831
+		event_timer_add = context.window_manager.event_timer_add
+		modal_handler_add = context.window_manager.modal_handler_add
+		timer = event_timer_add(1, window = context.window)
 
-		context.window_manager.modal_handler_add(self)
+		self.click = 0
+		probe_interaction.timer = timer
 
+		modal_handler_add(self)
 		return { 'RUNNING_MODAL' }
 
 	def modal(self, context, event):
-		if event.type == 'LEFTMOUSE' and \
-		   event.value == 'PRESS' and \
+		if event.type == 'TIMER' and self.click:
+			self.click -= 1
+			current.state[0] = do_probe(context, event)
+			return { 'RUNNING_MODAL' }
+
+		elif event.type in ( 'LEFTMOUSE', 'RIGHTMOUSE' ) and \
+		   event.value == 'RELEASE' and \
 		   not app.is_job_running('RENDER') and \
 		   not app.is_job_running('OBJECT_BAKE'):
-			next = time_monotonic()
-
-			if next - self.prev >= 0.5:
-				self.prev = next
-				current.state[0] = do_probe(context, event)
+			self.click += 1
 
 		return { 'PASS_THROUGH' }
 
@@ -70,4 +76,5 @@ def probe_enable_interact():
 	utils.register_class(probe_interaction)
 
 def probe_disable_interact():
+	__context.window_manager.event_timer_remove(probe_interaction.timer)
 	utils.unregister_class(probe_interaction)
