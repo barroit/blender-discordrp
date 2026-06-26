@@ -18,26 +18,22 @@ def on_render_init(scene):
 	ctx.start = scene.frame_start
 	ctx.end = scene.frame_end
 	ctx.step = scene.frame_step
-	ctx.current = scene.frame_current
 	ctx.index = 0
 	ctx.frames = count_frame(ctx)
 
 def on_render_pre(scene):
 	res = SimpleNamespace()
-	unit =  'frames'
 
-	if ctx.step == 1:
-		unit = 'frame'
-
-	ctx.current = scene.frame_current
 	ctx.index += 1
-
-	res.details = f'Rendering frame {ctx.current}'
-	res.state = f'From {ctx.start} to {ctx.end} (every {ctx.step} {unit})'
-
 	res.party = SimpleNamespace()
+
+	res.details = f"Rendering frames from {ctx.start} to {ctx.end}"
+	res.state = f"Every {ctx.step} frame"
 	res.party.id = 'miku'
 	res.party.size = [ ctx.index, ctx.frames ]
+
+	if ctx.step > 1:
+		res.state += 's'
 
 	current.state[0] = res
 
