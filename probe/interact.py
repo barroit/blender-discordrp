@@ -77,12 +77,20 @@ def probe_start_interact():
 def on_load_post(filepath):
 	probe_start_interact()
 
-def probe_enable_interact():
+def __probe_enable_interact():
 	utils.register_class(probe_interaction)
 	app.timers.register(probe_start_interact)
 	app.handlers.load_post.append(on_load_post)
 
-def probe_disable_interact():
+def __probe_disable_interact():
 	__context.window_manager.event_timer_remove(probe_interaction.timer)
 	utils.unregister_class(probe_interaction)
 	app.handlers.load_post.remove(on_load_post)
+
+def probe_enable_interact():
+	if not app.background:
+		__probe_enable_interact()
+
+def probe_disable_interact():
+	if not app.background:
+		__probe_disable_interact()
