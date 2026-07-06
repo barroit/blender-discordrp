@@ -10,6 +10,7 @@ from json import dumps, loads
 from os import environ, getpid
 from struct import pack, unpack
 from sys import platform
+from time import time_ns
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -25,6 +26,8 @@ TMPDIR = environ.get('TMPDIR')
 
 XDG_RUNTIME_DIR_FLATPAK = f"{XDG_RUNTIME_DIR}/app/com.discordapp.Discord"
 XDG_RUNTIME_DIR_SNAP = f"{XDG_RUNTIME_DIR}/snap.discord"
+
+born = time_ns() // 1_000_000
 
 class ipc_socket:
 	def __init__(self, reader, writer):
@@ -187,10 +190,15 @@ def ipc_presence(ctx, activity_in, meta_in):
 	uuid = uuid4()
 
 	if activity_in:
+		timestamps = SimpleNamespace()
 		meta = vars(meta_in)
 		activity = deepcopy(activity_in)
 
 		vars(activity).update(meta)
+
+		timestamps.start = born
+		activity.timestamps = timestamps
+
 		args.activity = activity
 
 	args.pid = getpid()
