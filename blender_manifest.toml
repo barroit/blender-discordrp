@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 schema_version = '1.0.0'
-blender_version_min = '4.2'
+blender_version_min = '4.2.0'
 
 id = 'discordrp'
 version = '0.0.0'
