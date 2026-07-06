@@ -33,7 +33,7 @@ def format_message(context, axis):
 
 		res.details += f" ({editor})"
 
-	if hasattr(context, 'active_object'):
+	if hasattr(context, 'active_object') and context.active_object:
 		target = context.active_object.name
 
 		res.state = f"Editing {target}"
