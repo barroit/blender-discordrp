@@ -5,7 +5,7 @@
 
 import bpy
 from ..lib.current import current
-from bpy import app
+from bpy import app as bpy_app
 from os.path import basename, dirname, isfile, splitext
 from types import SimpleNamespace
 
@@ -27,7 +27,7 @@ def normalize_name(path):
 
 def probe_meta():
 	res = SimpleNamespace()
-	platform = app.build_platform.decode('utf-8')
+	platform = bpy_app.build_platform.decode('utf-8')
 	project = 'Untitled'
 	delay = 1
 
@@ -44,7 +44,7 @@ def probe_meta():
 	res.name = 'Blender'
 	res.assets = SimpleNamespace()
 
-	res.assets.large_text = f"{app.version_string} - {platform}"
+	res.assets.large_text = f"{bpy_app.version_string} - {platform}"
 	res.assets.large_image = 'CDN_MATERIAL_ICON/blender.png'
 
 	res.assets.small_text = project.replace('_', ' ')
@@ -55,7 +55,7 @@ def probe_meta():
 
 def probe_enable_meta():
 	probe_meta()
-	app.timers.register(probe_meta, persistent = True)
+	bpy_app.timers.register(probe_meta, persistent = True)
 
 def probe_disable_meta():
-	app.timers.unregister(probe_meta)
+	bpy_app.timers.unregister(probe_meta)

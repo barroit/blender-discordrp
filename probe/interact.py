@@ -6,7 +6,8 @@
 # https://docs.blender.org/api/current/bpy.types.EnumProperty.html#bpy.types.EnumProperty.enum_items
 
 from ..lib.current import current
-from bpy import app, context as __context, ops, types, utils
+from bpy import app as bpy_app, context as bpy_context, ops as bpy_ops, \
+		types as bpy_types, utils as bpy_utils
 from bpy.app.handlers import persistent
 from collections import deque
 from types import SimpleNamespace
@@ -28,7 +29,7 @@ def format_message(context, axis):
 	res.details = f"In {workspace}"
 
 	if area:
-		area_meta = types.Area.bl_rna.properties['type']
+		area_meta = bpy_types.Area.bl_rna.properties['type']
 		editor = area_meta.enum_items[area].name
 
 		res.details += f" ({editor})"
@@ -40,7 +41,7 @@ def format_message(context, axis):
 
 	return res
 
-class probe_interaction(types.Operator):
+class probe_interaction(bpy_types.Operator):
 	bl_idname = 'wm.probe_interaction'
 	bl_label = 'Probe Interaction'
 
@@ -64,33 +65,33 @@ class probe_interaction(types.Operator):
 
 		elif event.type in ( 'LEFTMOUSE', 'RIGHTMOUSE' ) and \
 		   event.value == 'RELEASE' and \
-		   not app.is_job_running('RENDER') and \
-		   not app.is_job_running('OBJECT_BAKE'):
+		   not bpy_app.is_job_running('RENDER') and \
+		   not bpy_app.is_job_running('OBJECT_BAKE'):
 			self.clicks.append(( event.mouse_x, event.mouse_y ))
 
 		return { 'PASS_THROUGH' }
 
 def probe_start_interact():
-	ops.wm.probe_interaction('INVOKE_DEFAULT')
+	bpy_ops.wm.probe_interaction('INVOKE_DEFAULT')
 
 @persistent
 def on_load_post(filepath):
 	probe_start_interact()
 
 def __probe_enable_interact():
-	utils.register_class(probe_interaction)
-	app.timers.register(probe_start_interact)
-	app.handlers.load_post.append(on_load_post)
+	bpy_utils.register_class(probe_interaction)
+	bpy_app.timers.register(probe_start_interact)
+	bpy_app.handlers.load_post.append(on_load_post)
 
 def __probe_disable_interact():
-	__context.window_manager.event_timer_remove(probe_interaction.timer)
-	utils.unregister_class(probe_interaction)
-	app.handlers.load_post.remove(on_load_post)
+	bpy_context.window_manager.event_timer_remove(probe_interaction.timer)
+	bpy_utils.unregister_class(probe_interaction)
+	bpy_app.handlers.load_post.remove(on_load_post)
 
 def probe_enable_interact():
-	if not app.background:
+	if not bpy_app.background:
 		__probe_enable_interact()
 
 def probe_disable_interact():
-	if not app.background:
+	if not bpy_app.background:
 		__probe_disable_interact()

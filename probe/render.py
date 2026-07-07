@@ -4,7 +4,7 @@
 #
 
 from ..lib.current import current
-from bpy import app
+from bpy import app as bpy_app
 from bpy.app.handlers import persistent
 from types import SimpleNamespace
 
@@ -45,13 +45,13 @@ def on_render_complete(scene, depsgraph):
 	current.state[0] = ctx.restore
 
 def probe_enable_render():
-	app.handlers.render_init.append(on_render_init)
-	app.handlers.render_pre.append(on_render_pre)
-	app.handlers.render_complete.append(on_render_complete)
-	app.handlers.render_cancel.append(on_render_complete)
+	bpy_app.handlers.render_init.append(on_render_init)
+	bpy_app.handlers.render_pre.append(on_render_pre)
+	bpy_app.handlers.render_complete.append(on_render_complete)
+	bpy_app.handlers.render_cancel.append(on_render_complete)
 
 def probe_disable_render():
-	app.handlers.render_init.remove(on_render_init)
-	app.handlers.render_pre.remove(on_render_pre)
-	app.handlers.render_complete.remove(on_render_complete)
-	app.handlers.render_cancel.remove(on_render_complete)
+	bpy_app.handlers.render_init.remove(on_render_init)
+	bpy_app.handlers.render_pre.remove(on_render_pre)
+	bpy_app.handlers.render_complete.remove(on_render_complete)
+	bpy_app.handlers.render_cancel.remove(on_render_complete)

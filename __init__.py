@@ -9,13 +9,17 @@ from .lib.current import current
 from .probe.render import probe_disable_render, probe_enable_render
 from .probe.meta import probe_disable_meta, probe_enable_meta
 from .probe.interact import probe_disable_interact, probe_enable_interact
-from asyncio import create_task, gather, new_event_loop, set_event_loop, sleep
+from asyncio import create_task as asyncio_create_task, \
+		    gather as asyncio_gather, \
+		    new_event_loop as asyncio_new_event_loop, \
+		    set_event_loop as asyncio_set_event_loop, \
+		    sleep as asyncio_sleep
 from atexit import register as atexit_register, unregister as atexit_unregister
 from sys import stderr
-from threading import Thread, local
+from threading import Thread, local as tls
 from types import SimpleNamespace
 
-ipc = local()
+ipc = tls()
 
 async def init_ipc():
 	while 39:
@@ -24,7 +28,7 @@ async def init_ipc():
 		if ipc.ctx:
 			break
 
-		await sleep(2)
+		await asyncio_sleep(2)
 
 		IPC_MAYBE_STOP
 
@@ -45,7 +49,7 @@ async def broadcast_presence():
 			ipc_presence(ipc.ctx, current.state[1],
 				     current.state[2])
 
-		await sleep(1)
+		await asyncio_sleep(1)
 
 async def ipc_main():
 	while 39:
@@ -57,7 +61,7 @@ async def ipc_main():
 		IPC_MAYBE_STOP
 
 		coro = ipc_rx_once(ipc.ctx, on_discord_reply)
-		task = create_task(coro)
+		task = asyncio_create_task(coro)
 
 		IPC_ASSERT_PASS(ipc_handshake(ipc.ctx, APP_ID))
 		IPC_MAYBE_STOP
@@ -68,12 +72,12 @@ async def ipc_main():
 		DPRINT('DONE - ipc_rx_once()')
 
 		coro_rx = ipc_rx(ipc.ctx, on_discord_reply)
-		task_rx = create_task(coro_rx)
+		task_rx = asyncio_create_task(coro_rx)
 
 		coro_tx = broadcast_presence()
-		task_tx = create_task(coro_tx)
+		task_tx = asyncio_create_task(coro_tx)
 
-		err_rx, err_tx = await gather(task_rx, task_tx)
+		err_rx, err_tx = await asyncio_gather(task_rx, task_tx)
 		DPRINT('DONE - ipc_rx() or broadcast_presence()')
 
 		IPC_ASSERT_PASS(err_rx or err_tx)
@@ -82,7 +86,7 @@ async def ipc_main():
 def start_ipc(version):
 	expired = 0
 	coro = ipc_main()
-	sched = new_event_loop()
+	sched = asyncio_new_event_loop()
 
 	state_0 = SimpleNamespace()
 	state_1 = SimpleNamespace()
@@ -102,7 +106,7 @@ def start_ipc(version):
 			expired = 1
 
 	if not expired:
-		set_event_loop(sched)
+		asyncio_set_event_loop(sched)
 		sched.run_until_complete(coro)
 
 	sched.close()

@@ -4,9 +4,10 @@
 #
 
 from asyncio import StreamReader, StreamReaderProtocol, StreamWriter, \
-		    get_running_loop, open_unix_connection
+		    get_running_loop as asyncio_get_running_loop, \
+		    open_unix_connection as asyncio_open_unix_connection
 from copy import deepcopy
-from json import dumps, loads
+from json import dumps as json_dump, loads as json_load
 from os import environ, getpid
 from struct import pack, unpack
 from sys import platform
@@ -47,12 +48,12 @@ class ipc_socket:
 		self.writer.close()
 
 async def try_connect_unix(path):
-	reader, writer = await open_unix_connection(path)
+	reader, writer = await asyncio_open_unix_connection(path)
 
 	return ipc_socket(reader, writer)
 
 async def try_connect_win32(path):
-	loop = get_running_loop()
+	loop = asyncio_get_running_loop()
 	reader = StreamReader()
 	protocol = StreamReaderProtocol(reader)
 	transport, _ = await loop.create_pipe_connection(lambda: protocol, path)
@@ -134,7 +135,7 @@ def ipc_close(ctx):
 	ctx.sock.close()
 
 def send(sock, op, data):
-	str = dumps(data, ensure_ascii = False, default = vars)
+	str = json_dump(data, ensure_ascii = False, default = vars)
 	bytes = str.encode('utf-8')
 	header = pack('<ii', op, len(bytes))
 	buf = header + bytes
@@ -147,7 +148,7 @@ async def receive(sock, cb):
 
 	chunk = await sock.read(length)
 	str = chunk.decode('utf-8')
-	res = loads(str, object_hook = lambda obj: SimpleNamespace(**obj))
+	res = json_load(str, object_hook = lambda obj: SimpleNamespace(**obj))
 
 	cb(res, op, str)
 
