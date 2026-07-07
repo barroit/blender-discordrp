@@ -133,14 +133,15 @@ async def ipc_init():
 def ipc_close(ctx):
 	ctx.sock.close()
 
-def encode(op, data):
+def send(sock, op, data):
 	str = dumps(data, ensure_ascii = False, default = vars)
 	bytes = str.encode('utf-8')
 	header = pack('<ii', op, len(bytes))
+	buf = header + bytes
 
-	return header + bytes
+	sock.write(buf)
 
-async def decode(sock, cb):
+async def receive(sock, cb):
 	chunk = await sock.read(8)
 	op, length = unpack('<II', chunk)
 
@@ -152,7 +153,7 @@ async def decode(sock, cb):
 
 async def ipc_rx_once(ctx, cb):
 	try:
-		await decode(ctx.sock, cb)
+		await receive(ctx.sock, cb)
 
 	except Exception as err:
 		ipc_close(ctx)
@@ -168,10 +169,8 @@ async def ipc_rx(ctx, cb):
 			return err
 
 def ipc_tx(ctx, op, args):
-	buf = encode(op, args)
-
 	try:
-		ctx.sock.write(buf)
+		send(ctx.sock, op, args)
 
 	except Exception as err:
 		ipc_close(ctx)
