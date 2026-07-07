@@ -3,6 +3,8 @@
 
 set -e
 
+name=$(head -n1 README | cut -d- -f2)
+
 if [ $(uname) = Darwin ]; then
 	dst=$HOME/Library/Application\ Support/Blender
 else
@@ -14,7 +16,7 @@ for blender in "$dst"/*; do
 	prefix="$blender"/extensions/user_default
 
 	mkdir -p "$prefix"
-	ln -snf $(realpath .)/build "$prefix"/discordrp
+	ln -snf $(realpath .)/build "$prefix"/$name
 
-	printf -- ' -> %s\n' "$prefix"/discordrp
+	printf -- ' -> %s\n' "$prefix"/$name
 done
