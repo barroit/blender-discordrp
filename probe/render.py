@@ -41,17 +41,17 @@ def on_render_pre(scene):
 	current.state[0] = res
 
 @persistent
-def render_complete(scene, depsgraph):
+def on_render_complete(scene, depsgraph):
 	current.state[0] = ctx.restore
 
 def probe_enable_render():
 	app.handlers.render_init.append(on_render_init)
 	app.handlers.render_pre.append(on_render_pre)
-	app.handlers.render_complete.append(render_complete)
-	app.handlers.render_cancel.append(render_complete)
+	app.handlers.render_complete.append(on_render_complete)
+	app.handlers.render_cancel.append(on_render_complete)
 
 def probe_disable_render():
 	app.handlers.render_init.remove(on_render_init)
 	app.handlers.render_pre.remove(on_render_pre)
-	app.handlers.render_complete.remove(render_complete)
-	app.handlers.render_cancel.remove(render_complete)
+	app.handlers.render_complete.remove(on_render_complete)
+	app.handlers.render_cancel.remove(on_render_complete)
