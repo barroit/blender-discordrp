@@ -80,6 +80,7 @@ async def ipc_main():
 		IPC_MAYBE_STOP
 
 def start_ipc(version):
+	expired = 0
 	coro = ipc_main()
 	sched = new_event_loop()
 
@@ -89,18 +90,20 @@ def start_ipc(version):
 	state_0.details = 'Just started'
 
 	with current.lock:
-		if current.version != version:
-			return
+		if current.version == version:
+			ipc.ctx = None
+			ipc.disabled = 0
 
-		ipc.ctx = None
-		ipc.disabled = 0
+			current.sched = sched
+			current.state[0] = state_0
+			current.state[1] = state_1
 
-		current.sched = sched
-		current.state[0] = state_0
-		current.state[1] = state_1
+		else:
+			expired = 1
 
-	set_event_loop(sched)
-	sched.run_until_complete(coro)
+	if not expired:
+		set_event_loop(sched)
+		sched.run_until_complete(coro)
 
 	sched.close()
 
