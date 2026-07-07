@@ -130,7 +130,7 @@ def register():
 
 		current.version = version
 
-	thread = Thread(target = start_ipc, args = (version, ), daemon = True)
+	thread = Thread(target = start_ipc, args = (version, ))
 
 	thread.start()
 
